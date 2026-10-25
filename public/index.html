@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pasarela de pago - Demo</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://js.stripe.com/v3/"></script>
+</head>
+<body>
+  <main>
+    <h1>Tienda de prueba</h1>
+    <p class="aviso">Modo de pruebas: usa la tarjeta <code>4242 4242 4242 4242</code>, cualquier fecha futura y cualquier CVC.</p>
+
+    <section id="paso-producto">
+      <label for="producto">Producto</label>
+      <select id="producto"></select>
+      <p>Total: <strong id="total"></strong></p>
+      <button id="btn-continuar">Continuar al pago</button>
+    </section>
+
+    <form id="form-pago" hidden>
+      <div id="payment-element"></div>
+      <button id="btn-pagar">Pagar</button>
+    </form>
+
+    <div id="mensaje" role="status"></div>
+    <button id="btn-seguir" type="button" hidden>Seguir comprando</button>
+  </main>
+
+  <button id="btn-ayuda" type="button" aria-label="Ver tarjetas de prueba" title="Tarjetas de prueba">?</button>
+
+  <dialog id="modal-tarjetas" aria-labelledby="modal-titulo">
+    <header>
+      <h2 id="modal-titulo">Tarjetas de prueba</h2>
+      <button id="btn-cerrar" type="button" aria-label="Cerrar">&times;</button>
+    </header>
+    <p>Usa cualquier fecha futura (ej. <code>12/34</code>), cualquier CVC de 3 dígitos y cualquier código postal. Haz clic en un título para ver sus tarjetas.</p>
+
+    <details>
+      <summary>Pago exitoso</summary>
+      <table>
+        <thead><tr><th>Número</th><th>Qué simula</th></tr></thead>
+        <tbody>
+          <tr><td><code>4242 4242 4242 4242</code></td><td>Visa</td></tr>
+          <tr><td><code>4000 0566 5566 5556</code></td><td>Visa (débito)</td></tr>
+          <tr><td><code>5555 5555 5555 4444</code></td><td>Mastercard</td></tr>
+          <tr><td><code>5200 8282 8282 8210</code></td><td>Mastercard (débito)</td></tr>
+          <tr><td><code>3782 822463 10005</code></td><td>American Express (CVC de 4 dígitos)</td></tr>
+          <tr><td><code>6011 1111 1111 1117</code></td><td>Discover</td></tr>
+          <tr><td><code>3566 0020 2036 0505</code></td><td>JCB</td></tr>
+          <tr><td><code>6200 0000 0000 0005</code></td><td>UnionPay</td></tr>
+        </tbody>
+      </table>
+    </details>
+
+    <details>
+      <summary>Pago rechazado</summary>
+      <table>
+        <thead><tr><th>Número</th><th>Qué simula</th></tr></thead>
+        <tbody>
+          <tr><td><code>4000 0000 0000 0002</code></td><td>Rechazo genérico (<code>generic_decline</code>)</td></tr>
+          <tr><td><code>4000 0000 0000 9995</code></td><td>Fondos insuficientes</td></tr>
+          <tr><td><code>4000 0000 0000 9987</code></td><td>Tarjeta perdida</td></tr>
+          <tr><td><code>4000 0000 0000 9979</code></td><td>Tarjeta robada</td></tr>
+          <tr><td><code>4000 0000 0000 0069</code></td><td>Tarjeta vencida</td></tr>
+          <tr><td><code>4000 0000 0000 0127</code></td><td>CVC incorrecto</td></tr>
+          <tr><td><code>4000 0000 0000 0119</code></td><td>Error de procesamiento</td></tr>
+          <tr><td><code>4242 4242 4242 4241</code></td><td>Número de tarjeta incorrecto</td></tr>
+          <tr><td><code>4000 0000 0000 6975</code></td><td>Límite de velocidad excedido</td></tr>
+          <tr><td><code>4000 0000 0000 0341</code></td><td>Se guarda bien, pero los cobros posteriores fallan</td></tr>
+        </tbody>
+      </table>
+    </details>
+
+    <details>
+      <summary>Autenticación 3D Secure</summary>
+      <table>
+        <thead><tr><th>Número</th><th>Qué simula</th></tr></thead>
+        <tbody>
+          <tr><td><code>4000 0000 0000 3220</code></td><td>Obligatoria; al completarla, el pago se aprueba</td></tr>
+          <tr><td><code>4000 0084 0000 1629</code></td><td>Obligatoria; después de autenticar, se rechaza</td></tr>
+          <tr><td><code>4000 0000 0000 3055</code></td><td>Compatible pero opcional</td></tr>
+          <tr><td><code>4000 0000 3220 0000</code></td><td>Obligatoria, pero sin fricción (se aprueba sola)</td></tr>
+          <tr><td><code>4000 0027 6000 3184</code></td><td>Pide autenticación en cada transacción</td></tr>
+          <tr><td><code>4000 0025 0000 3155</code></td><td>Pide autenticación hasta que se configura la tarjeta</td></tr>
+          <tr><td><code>4000 0082 6000 3178</code></td><td>Fondos insuficientes incluso tras autenticar</td></tr>
+        </tbody>
+      </table>
+    </details>
+
+    <details>
+      <summary>Fraude (Radar)</summary>
+      <table>
+        <thead><tr><th>Número</th><th>Qué simula</th></tr></thead>
+        <tbody>
+          <tr><td><code>4100 0000 0000 0019</code></td><td>Siempre bloqueada (error <code>fraud</code>)</td></tr>
+          <tr><td><code>4000 0000 0000 4954</code></td><td>Riesgo muy alto; se bloquea según la configuración</td></tr>
+          <tr><td><code>4000 0000 0000 9235</code></td><td>Riesgo elevado; puede quedar en revisión</td></tr>
+          <tr><td><code>4000 0000 0000 0101</code></td><td>Falla la verificación del CVC</td></tr>
+          <tr><td><code>4000 0000 0000 0036</code></td><td>Falla la verificación del código postal</td></tr>
+        </tbody>
+      </table>
+    </details>
+
+    <p class="nota">Solo funcionan en modo de pruebas. Más casos (disputas, reembolsos y otros países) en <a href="https://docs.stripe.com/testing" target="_blank" rel="noopener">docs.stripe.com/testing</a>.</p>
+  </dialog>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
