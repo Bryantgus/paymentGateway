@@ -1,52 +1,95 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Pasarela de pago - Demo</title>
+  <title>Payment gateway - Demo</title>
   <link rel="stylesheet" href="style.css">
   <script src="https://js.stripe.com/v3/"></script>
 </head>
 <body>
   <main>
-    <h1>Tienda de prueba</h1>
-    <p class="aviso">Modo de pruebas: usa la tarjeta <code>4242 4242 4242 4242</code>, cualquier fecha futura y cualquier CVC.</p>
+    <h1>Test store</h1>
+    <p class="notice">Test mode: use the card <code>4242 4242 4242 4242</code>, any future date and any CVC.</p>
 
-    <section id="paso-producto">
-      <label for="producto">Producto</label>
-      <select id="producto"></select>
+    <section id="product-step">
+      <label for="product">Product</label>
+      <select id="product"></select>
       <p>Total: <strong id="total"></strong></p>
-      <button id="btn-continuar">Continuar al pago</button>
+      <button id="btn-continue">Continue to payment</button>
     </section>
 
-    <form id="form-pago" hidden>
+    <form id="payment-form" hidden>
       <div id="payment-element"></div>
-      <button id="btn-pagar">Pagar</button>
+      <button id="btn-pay">Pay</button>
     </form>
 
-    <div id="mensaje" role="status"></div>
-    <button id="btn-seguir" type="button" hidden>Seguir comprando</button>
+    <div id="message" role="status"></div>
+    <button id="btn-keep-shopping" type="button" hidden>Keep shopping</button>
   </main>
 
-  <button id="btn-ayuda" type="button" aria-label="Ver tarjetas de prueba" title="Tarjetas de prueba">?</button>
+  <section id="lab">
+    <h2>Idempotency lab</h2>
+    <p class="intro">
+      A repeated request (double click, retry after a network cut) or a webhook delivered twice should not
+      charge or notify twice. Turn the protection off to see what happens without it, then turn it back on to compare.
+    </p>
 
-  <dialog id="modal-tarjetas" aria-labelledby="modal-titulo">
+    <div class="controls">
+      <label class="switch">
+        <input type="checkbox" id="lab-idempotency" checked>
+        <span>Idempotency: <strong id="lab-mode-status">…</strong></span>
+      </label>
+      <label>
+        Random failure at each webhook step
+        <select id="lab-faults">
+          <option value="0">0 % (never)</option>
+          <option value="25">25 %</option>
+          <option value="50">50 %</option>
+          <option value="100">100 % (always)</option>
+        </select>
+      </label>
+    </div>
+
+    <ol class="steps">
+      <li><strong>Double submit when creating the payment.</strong> Pick a product above and press <button type="button" id="lab-double-click">Simulate double click</button>: two identical requests at once.</li>
+      <li><strong>Duplicate webhook.</strong> In the orders table, "×2" makes the gateway deliver the same payment notice twice. "×1" repeats a notice that was already sent.</li>
+      <li><strong>Failure halfway.</strong> Raise the random failure and notify a payment: see how the order, the charge and the SMS end up with and without protection.</li>
+      <li><strong>Payment charged but not recorded.</strong> Pay with a test card while the webhook is off (or failing) and press <button type="button" id="lab-reconcile">Reconcile with Stripe</button>.</li>
+    </ol>
+
+    <p id="lab-result" role="status"></p>
+    <div id="lab-verdict" class="verdict"></div>
+
+    <div class="tables">
+      <div><h3>Orders</h3><div id="lab-orders"></div></div>
+      <div><h3>Recorded charges (what finance sees)</h3><div id="lab-charges"></div></div>
+      <div><h3>SMS sent to the customer</h3><div id="lab-sms"></div></div>
+      <div><h3>Gateway events already processed</h3><div id="lab-events"></div></div>
+    </div>
+
+    <button type="button" id="lab-reset" class="secondary">Reset demo data</button>
+  </section>
+
+  <button id="btn-help" type="button" aria-label="Show test cards" title="Test cards">?</button>
+
+  <dialog id="cards-modal" aria-labelledby="modal-title">
     <header>
-      <h2 id="modal-titulo">Tarjetas de prueba</h2>
-      <button id="btn-cerrar" type="button" aria-label="Cerrar">&times;</button>
+      <h2 id="modal-title">Test cards</h2>
+      <button id="btn-close" type="button" aria-label="Close">&times;</button>
     </header>
-    <p>Usa cualquier fecha futura (ej. <code>12/34</code>), cualquier CVC de 3 dígitos y cualquier código postal. Haz clic en un título para ver sus tarjetas.</p>
+    <p>Use any future date (e.g. <code>12/34</code>), any 3-digit CVC and any postal code. Click a title to see its cards.</p>
 
     <details>
-      <summary>Pago exitoso</summary>
+      <summary>Successful payment</summary>
       <table>
-        <thead><tr><th>Número</th><th>Qué simula</th></tr></thead>
+        <thead><tr><th>Number</th><th>What it simulates</th></tr></thead>
         <tbody>
           <tr><td><code>4242 4242 4242 4242</code></td><td>Visa</td></tr>
-          <tr><td><code>4000 0566 5566 5556</code></td><td>Visa (débito)</td></tr>
+          <tr><td><code>4000 0566 5566 5556</code></td><td>Visa (debit)</td></tr>
           <tr><td><code>5555 5555 5555 4444</code></td><td>Mastercard</td></tr>
-          <tr><td><code>5200 8282 8282 8210</code></td><td>Mastercard (débito)</td></tr>
-          <tr><td><code>3782 822463 10005</code></td><td>American Express (CVC de 4 dígitos)</td></tr>
+          <tr><td><code>5200 8282 8282 8210</code></td><td>Mastercard (debit)</td></tr>
+          <tr><td><code>3782 822463 10005</code></td><td>American Express (4-digit CVC)</td></tr>
           <tr><td><code>6011 1111 1111 1117</code></td><td>Discover</td></tr>
           <tr><td><code>3566 0020 2036 0505</code></td><td>JCB</td></tr>
           <tr><td><code>6200 0000 0000 0005</code></td><td>UnionPay</td></tr>
@@ -55,55 +98,55 @@
     </details>
 
     <details>
-      <summary>Pago rechazado</summary>
+      <summary>Declined payment</summary>
       <table>
-        <thead><tr><th>Número</th><th>Qué simula</th></tr></thead>
+        <thead><tr><th>Number</th><th>What it simulates</th></tr></thead>
         <tbody>
-          <tr><td><code>4000 0000 0000 0002</code></td><td>Rechazo genérico (<code>generic_decline</code>)</td></tr>
-          <tr><td><code>4000 0000 0000 9995</code></td><td>Fondos insuficientes</td></tr>
-          <tr><td><code>4000 0000 0000 9987</code></td><td>Tarjeta perdida</td></tr>
-          <tr><td><code>4000 0000 0000 9979</code></td><td>Tarjeta robada</td></tr>
-          <tr><td><code>4000 0000 0000 0069</code></td><td>Tarjeta vencida</td></tr>
-          <tr><td><code>4000 0000 0000 0127</code></td><td>CVC incorrecto</td></tr>
-          <tr><td><code>4000 0000 0000 0119</code></td><td>Error de procesamiento</td></tr>
-          <tr><td><code>4242 4242 4242 4241</code></td><td>Número de tarjeta incorrecto</td></tr>
-          <tr><td><code>4000 0000 0000 6975</code></td><td>Límite de velocidad excedido</td></tr>
-          <tr><td><code>4000 0000 0000 0341</code></td><td>Se guarda bien, pero los cobros posteriores fallan</td></tr>
+          <tr><td><code>4000 0000 0000 0002</code></td><td>Generic decline (<code>generic_decline</code>)</td></tr>
+          <tr><td><code>4000 0000 0000 9995</code></td><td>Insufficient funds</td></tr>
+          <tr><td><code>4000 0000 0000 9987</code></td><td>Lost card</td></tr>
+          <tr><td><code>4000 0000 0000 9979</code></td><td>Stolen card</td></tr>
+          <tr><td><code>4000 0000 0000 0069</code></td><td>Expired card</td></tr>
+          <tr><td><code>4000 0000 0000 0127</code></td><td>Incorrect CVC</td></tr>
+          <tr><td><code>4000 0000 0000 0119</code></td><td>Processing error</td></tr>
+          <tr><td><code>4242 4242 4242 4241</code></td><td>Incorrect card number</td></tr>
+          <tr><td><code>4000 0000 0000 6975</code></td><td>Rate limit exceeded</td></tr>
+          <tr><td><code>4000 0000 0000 0341</code></td><td>Saves fine, but later charges fail</td></tr>
         </tbody>
       </table>
     </details>
 
     <details>
-      <summary>Autenticación 3D Secure</summary>
+      <summary>3D Secure authentication</summary>
       <table>
-        <thead><tr><th>Número</th><th>Qué simula</th></tr></thead>
+        <thead><tr><th>Number</th><th>What it simulates</th></tr></thead>
         <tbody>
-          <tr><td><code>4000 0000 0000 3220</code></td><td>Obligatoria; al completarla, el pago se aprueba</td></tr>
-          <tr><td><code>4000 0084 0000 1629</code></td><td>Obligatoria; después de autenticar, se rechaza</td></tr>
-          <tr><td><code>4000 0000 0000 3055</code></td><td>Compatible pero opcional</td></tr>
-          <tr><td><code>4000 0000 3220 0000</code></td><td>Obligatoria, pero sin fricción (se aprueba sola)</td></tr>
-          <tr><td><code>4000 0027 6000 3184</code></td><td>Pide autenticación en cada transacción</td></tr>
-          <tr><td><code>4000 0025 0000 3155</code></td><td>Pide autenticación hasta que se configura la tarjeta</td></tr>
-          <tr><td><code>4000 0082 6000 3178</code></td><td>Fondos insuficientes incluso tras autenticar</td></tr>
+          <tr><td><code>4000 0000 0000 3220</code></td><td>Required; once completed, the payment is approved</td></tr>
+          <tr><td><code>4000 0084 0000 1629</code></td><td>Required; after authenticating, it is declined</td></tr>
+          <tr><td><code>4000 0000 0000 3055</code></td><td>Supported but optional</td></tr>
+          <tr><td><code>4000 0000 3220 0000</code></td><td>Required, but frictionless (approves on its own)</td></tr>
+          <tr><td><code>4000 0027 6000 3184</code></td><td>Asks for authentication on every transaction</td></tr>
+          <tr><td><code>4000 0025 0000 3155</code></td><td>Asks for authentication until the card is set up</td></tr>
+          <tr><td><code>4000 0082 6000 3178</code></td><td>Insufficient funds even after authenticating</td></tr>
         </tbody>
       </table>
     </details>
 
     <details>
-      <summary>Fraude (Radar)</summary>
+      <summary>Fraud (Radar)</summary>
       <table>
-        <thead><tr><th>Número</th><th>Qué simula</th></tr></thead>
+        <thead><tr><th>Number</th><th>What it simulates</th></tr></thead>
         <tbody>
-          <tr><td><code>4100 0000 0000 0019</code></td><td>Siempre bloqueada (error <code>fraud</code>)</td></tr>
-          <tr><td><code>4000 0000 0000 4954</code></td><td>Riesgo muy alto; se bloquea según la configuración</td></tr>
-          <tr><td><code>4000 0000 0000 9235</code></td><td>Riesgo elevado; puede quedar en revisión</td></tr>
-          <tr><td><code>4000 0000 0000 0101</code></td><td>Falla la verificación del CVC</td></tr>
-          <tr><td><code>4000 0000 0000 0036</code></td><td>Falla la verificación del código postal</td></tr>
+          <tr><td><code>4100 0000 0000 0019</code></td><td>Always blocked (<code>fraud</code> error)</td></tr>
+          <tr><td><code>4000 0000 0000 4954</code></td><td>Very high risk; blocked depending on the configuration</td></tr>
+          <tr><td><code>4000 0000 0000 9235</code></td><td>Elevated risk; may go to review</td></tr>
+          <tr><td><code>4000 0000 0000 0101</code></td><td>CVC check fails</td></tr>
+          <tr><td><code>4000 0000 0000 0036</code></td><td>Postal code check fails</td></tr>
         </tbody>
       </table>
     </details>
 
-    <p class="nota">Solo funcionan en modo de pruebas. Más casos (disputas, reembolsos y otros países) en <a href="https://docs.stripe.com/testing" target="_blank" rel="noopener">docs.stripe.com/testing</a>.</p>
+    <p class="note">They only work in test mode. More cases (disputes, refunds and other countries) at <a href="https://docs.stripe.com/testing" target="_blank" rel="noopener">docs.stripe.com/testing</a>.</p>
   </dialog>
 
   <script type="module" src="js/main.js"></script>

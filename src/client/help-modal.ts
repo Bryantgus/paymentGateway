@@ -1,12 +1,12 @@
 import { $ } from './dom.js';
 
-/** Botón flotante "?" y modal con las tarjetas de prueba. */
+/** Floating "?" button and modal with the test cards. */
 export function initHelpModal(): void {
-  const modal = $<HTMLDialogElement>('modal-tarjetas');
+  const modal = $<HTMLDialogElement>('cards-modal');
 
-  $('btn-ayuda').addEventListener('click', () => modal.showModal());
-  $('btn-cerrar').addEventListener('click', () => modal.close());
-  // Clic en el fondo oscuro (fuera del contenido) cierra el modal
+  $('btn-help').addEventListener('click', () => modal.showModal());
+  $('btn-close').addEventListener('click', () => modal.close());
+  // A click on the dark backdrop (outside the content) closes the modal
   modal.addEventListener('click', (e) => {
     if (e.target === modal) modal.close();
   });

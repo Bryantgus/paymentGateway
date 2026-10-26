@@ -3,21 +3,23 @@ import 'dotenv/config';
 export interface Env {
   stripeSecretKey: string;
   stripePublishableKey: string;
-  /** Opcional: solo hace falta para recibir webhooks (`stripe listen`). */
+  /** Optional: only needed to receive webhooks (`stripe listen`). */
   stripeWebhookSecret?: string;
   port: number;
+  /** SQLite file with orders, charges and events. `:memory:` for a temporary database. */
+  databasePath: string;
 }
 
-/** Lee y valida las variables de entorno una sola vez. Si falta algo, falla al arrancar y no en la primera petición. */
+/** Reads and validates the environment variables once. If something is missing, it fails at startup, not on the first request. */
 export function loadEnv(): Env {
   const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
   if (!stripeSecretKey?.startsWith('sk_test_')) {
-    throw new Error('Falta STRIPE_SECRET_KEY de prueba (sk_test_...) en el archivo .env');
+    throw new Error('Missing test STRIPE_SECRET_KEY (sk_test_...) in the .env file');
   }
 
   const stripePublishableKey = process.env.STRIPE_PUBLISHABLE_KEY;
   if (!stripePublishableKey?.startsWith('pk_test_')) {
-    throw new Error('Falta STRIPE_PUBLISHABLE_KEY de prueba (pk_test_...) en el archivo .env');
+    throw new Error('Missing test STRIPE_PUBLISHABLE_KEY (pk_test_...) in the .env file');
   }
 
   return {
@@ -25,5 +27,6 @@ export function loadEnv(): Env {
     stripePublishableKey,
     stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET || undefined,
     port: Number(process.env.PORT) || 3000,
+    databasePath: process.env.DATABASE_PATH || 'data/demo.db',
   };
 }

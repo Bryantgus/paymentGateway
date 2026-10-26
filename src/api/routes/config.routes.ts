@@ -11,7 +11,7 @@ export function configRoutes({ publishableKey, catalog }: ConfigRoutesDeps): Rou
   const router = Router();
 
   router.get('/config', (_req, res) => {
-    res.json({ publishableKey, productos: toProductsDto(catalog.list()) });
+    res.json({ publishableKey, products: toProductsDto(catalog.list()) });
   });
 
   return router;

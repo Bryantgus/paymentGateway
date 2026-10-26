@@ -1,2 +1,2 @@
-/** Clave de metadata donde guardamos el nombre del producto en el PaymentIntent (se escribe y se lee solo aquí). */
-export const PRODUCT_METADATA_KEY = 'producto';
+/** Metadata key where we store the product name on the PaymentIntent (written and read only here). */
+export const PRODUCT_METADATA_KEY = 'product';

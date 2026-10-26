@@ -1,7 +1,7 @@
 {
   "name": "pasarela-de-pago",
   "version": "1.0.0",
-  "description": "Demo de pasarela de pago con Stripe en modo de pruebas",
+  "description": "Payment gateway demo with Stripe in test mode",
   "main": "dist/main.js",
   "scripts": {
     "build:client": "tsc -p tsconfig.client.json",

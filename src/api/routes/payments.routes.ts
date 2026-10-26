@@ -10,10 +10,12 @@ export function paymentsRoutes({ createPayment }: PaymentsRoutesDeps): Router {
   const router = Router();
 
   router.post(
-    '/crear-pago',
+    '/create-payment',
     asyncHandler(async (req, res) => {
-      const productId = typeof req.body?.producto === 'string' ? req.body.producto : '';
-      const { clientSecret } = await createPayment.execute(productId);
+      const productId = typeof req.body?.product === 'string' ? req.body.product : '';
+      // The client generates the key, one per purchase attempt, and sends it in a header (Stripe's and other APIs' convention)
+      const idempotencyKey = req.header('Idempotency-Key');
+      const { clientSecret } = await createPayment.execute(productId, idempotencyKey);
       res.json({ clientSecret });
     })
   );

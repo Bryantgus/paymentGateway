@@ -1,8 +1,8 @@
-/** Producto del catálogo. El precio vive en el servidor: nunca confíes en el monto que envía el cliente. */
+/** A catalog product. The price lives on the server: never trust the amount sent by the client. */
 export interface Product {
   readonly id: string;
   readonly name: string;
-  /** En centavos de la moneda indicada. */
+  /** In cents of the given currency. */
   readonly amount: number;
   readonly currency: string;
 }

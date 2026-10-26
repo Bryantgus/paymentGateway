@@ -1,62 +1,75 @@
 # CLAUDE.md
 
-Guía para trabajar en este proyecto. Documentación general y puesta en marcha: [`README.md`](README.md).
+Guide for working on this project. General documentation and setup: [`README.md`](README.md).
 
-## Qué es
-Demo educativa de una pasarela de pago con Stripe **en modo de pruebas**. Node.js + Express + TypeScript, con Clean Architecture. Está pensado para crecer, así que mantén la separación de capas aunque algo parezca pequeño.
+## What it is
+Educational demo of a payment gateway with Stripe **in test mode**. Node.js + Express + TypeScript, with Clean Architecture. It is meant to grow, so keep the layers separated even when something looks small.
 
-## Comandos
-- `npm run dev`: compila el cliente y arranca con recarga (`tsx watch src/main.ts`).
-- `npm run typecheck`: revisa servidor y cliente. Ejecútalo después de cualquier cambio.
-- `npm run build`: compila a `dist/` (servidor) y `public/js/` (cliente).
-- No hay framework de pruebas todavía.
+## Commands
+- `npm run dev`: builds the client and starts with reload (`tsx watch src/main.ts`).
+- `npm run typecheck`: checks server and client. Run it after any change.
+- `npm run build`: compiles to `dist/` (server) and `public/js/` (client).
+- There is no test framework yet.
 
-## Arquitectura y reglas de dependencia
-`domain` ← `application` ← `infrastructure`; `api` por fuera; `composition-root.ts` lo conecta todo.
+## Architecture and dependency rules
+`domain` ← `application` ← `infrastructure`; `api` on the outside; `composition-root.ts` wires everything.
 
-| Capa | Puede importar | No puede importar |
+| Layer | Can import | Cannot import |
 |---|---|---|
-| `domain/` | nada | todo lo demás |
+| `domain/` | nothing | everything else |
 | `application/` | `domain` | `infrastructure`, `api`, `express`, `stripe` |
-| `infrastructure/` | `application`, `domain`, SDKs externos | `api` |
+| `infrastructure/` | `application`, `domain`, external SDKs | `api` |
 | `api/` | `application`, `domain` | `infrastructure` |
-| `composition-root.ts` | todo | — |
+| `composition-root.ts` | everything | — |
 
-Reglas concretas:
-- **Solo `infrastructure/stripe/` importa el SDK de Stripe.** Los eventos de Stripe se traducen a `PaymentEvent` (`domain/payments/payment-event.ts`) en `stripe-webhook-verifier.ts`.
-- **Los casos de uso dependen de puertos** (`application/ports/`), no de implementaciones. Una implementación nueva se escribe en `infrastructure/` y se conecta en `composition-root.ts`.
-- **Errores:** los casos de uso lanzan errores de `application/errors.ts`; `api/middleware/error-handler.ts` es el único lugar que los convierte en respuestas HTTP.
-- **Rutas:** reciben sus dependencias como parámetros (`xxxRoutes({ ... })`); no importan implementaciones concretas.
-- **Webhook:** necesita el body crudo, por eso se monta antes de `express.json()` en `app.ts`. Mantén ese orden.
-- **El servidor no crea la app y la escucha en el mismo sitio:** `createApp()` (en `app.ts`) construye, `main.ts` escucha. Así se puede probar sin abrir un puerto.
-- **DTO:** el contrato HTTP (`api/dto/`) es independiente del modelo de dominio (hoy `nombre`/`monto` en JSON y `name`/`amount` en dominio).
+Concrete rules:
+- **Only `infrastructure/stripe/` imports the Stripe SDK.** Stripe events are translated into `PaymentEvent` (`domain/payments/payment-event.ts`) in `stripe-webhook-verifier.ts`.
+- **Use cases depend on ports** (`application/ports/`), not on implementations. A new implementation is written in `infrastructure/` and wired in `composition-root.ts`.
+- **Errors:** use cases throw errors from `application/errors.ts`; `api/middleware/error-handler.ts` is the only place that turns them into HTTP responses.
+- **Routes:** receive their dependencies as parameters (`xxxRoutes({ ... })`); they don't import concrete implementations.
+- **Webhook:** needs the raw body, so it is mounted before `express.json()` in `app.ts`. Keep that order. It answers 200 only if the event was handled; on a failure it must answer 4xx/5xx so Stripe retries.
+- **The server doesn't create the app and listen in the same place:** `createApp()` (in `app.ts`) builds, `main.ts` listens. This way it can be tested without opening a port.
+- **DTOs:** the HTTP contract (`api/dto/`) is independent of the domain model (for example `name`/`amount` in JSON and `productName`/`amount` in the domain).
 
-## Convenciones de código
-- Nombres técnicos en inglés (`PaymentGateway`, `CreatePayment`, `InMemoryProductCatalog`). Comentarios, mensajes al usuario y documentación en español.
-- Los montos van **en centavos** (enteros). El precio siempre se decide en el servidor, nunca se acepta del cliente.
-- Servidor en CommonJS (`module: node16`), sin extensión en los imports relativos. Cliente en ES modules: los imports relativos **sí llevan `.js`** (`./api.js`), porque el navegador los carga tal cual.
-- `strict` activado en ambos `tsconfig`. TypeScript 7: no uses `moduleResolution: node`.
-- `public/js/` y `dist/` son salida generada y están en `.gitignore`.
+## Code conventions
+- **Everything is in English:** identifiers, comments, log and error messages, UI text, API routes and JSON fields, and documentation.
+- Amounts are **in cents** (integers). The price is always decided on the server, never accepted from the client.
+- Server in CommonJS (`module: node16`), no extension on relative imports. Client in ES modules: relative imports **do** carry `.js` (`./api.js`), because the browser loads them as they are.
+- `strict` enabled in both `tsconfig` files. TypeScript 7: don't use `moduleResolution: node`.
+- `public/js/` and `dist/` are generated output and are in `.gitignore`.
 
-## Seguridad
-- Solo claves de **modo de pruebas**: `env.ts` rechaza lo que no empiece por `sk_test_` / `pk_test_`. No relajes esa validación.
-- Nunca imprimas, registres ni pegues en documentación las claves del `.env` ni el `whsec_`. Si necesitas mostrarlas, enmascara todo salvo el prefijo.
-- Los datos de tarjeta nunca deben pasar por el servidor (los maneja el Payment Element de Stripe). No agregues campos de tarjeta propios.
-- Verifica siempre la firma del webhook; no proceses eventos sin verificar.
+## Security
+- **Test-mode keys only:** `env.ts` rejects anything that doesn't start with `sk_test_` / `pk_test_`. Don't relax that validation.
+- Never print, log or paste into documentation the `.env` keys or the `whsec_`. If you need to show them, mask everything except the prefix.
+- Placeholders in `.env.example` must not look like real keys (GitHub's push protection rejects `sk_test_xxxxxxxx…`): use text with underscores.
+- Card data must never go through the server (the Stripe Payment Element handles it). Don't add card fields of your own.
+- Always verify the webhook signature; don't process unverified events.
 
-## Stripe y entorno local
-- Los webhooks en local necesitan `stripe listen` (ver README). La CLI actual exige `--events …` o `--all-snapshot`.
-- **La CLI y las claves del `.env` deben apuntar a la misma cuenta de Stripe.** Si hay varios entornos de prueba pueden diferir; comprueba con `stripe get /v1/account` y usa `--api-key` si hace falta.
-- En Windows, tras instalar la CLI con `winget` hay que abrir una terminal nueva para que `stripe` esté en el PATH.
+## Stripe and local environment
+- Local webhooks need `stripe listen` (see the README). The current CLI requires `--events …` or `--all-snapshot`.
+- **The CLI and the `.env` keys must point to the same Stripe account.** If there are several test environments they may differ; check with `stripe get /v1/account` and use `--api-key` if needed.
+- On Windows, after installing the CLI with `winget` you must open a new terminal for `stripe` to be on the PATH.
 
-## Pendiente (a futuro)
-Funcionalidades que se agregarán más adelante. Detalle de cada una en el README.
+## Idempotency and lab
+Implemented, with a switch in the frontend ("Idempotency lab" panel) to compare with and without protection. It is a learning resource: in a real system idempotency is never optional.
 
-- **Reembolsos.** Caso de uso `RefundPayment`, método nuevo en `PaymentGateway`, ruta HTTP y eventos `refund.*`. Los eventos nuevos se traducen en `stripe-webhook-verifier.ts` y se agregan a `PaymentEvent`.
-- **Disputas (contracargos).** Manejo de `charge.dispute.*` en el webhook, estado `disputada` en las órdenes y envío de evidencia a Stripe. Requiere guardar órdenes, así que depende de añadir persistencia.
+- **Two versions of the same use case, on purpose.** `application/payments/naive-payment-succeeded.ts` is the version with the problems (no deduplication, no transaction, swallows errors and answers 200) and `idempotent-payment-succeeded.ts` is the fix. `HandleWebhook` picks one according to `DemoSettingsStore`. **Don't "fix" the naive version**: its value is to show the flaw. If the approved-payment flow changes, update both.
+- **Creating a payment:** with idempotency enabled, `CreatePayment` requires the `Idempotency-Key` header (generated by the client, one per purchase attempt, in `client/idempotency-key.ts`), stores it in `orders.idempotency_key` (UNIQUE) and passes it to Stripe as `idempotencyKey`.
+- **Webhook:** reserving the `eventId` (`INSERT OR IGNORE`), marking the order and recording the charge happen in **one transaction** (`UnitOfWork`). If anything fails, everything is rolled back and the webhook answers 4xx/5xx so Stripe retries. The SMS is sent **after** the transaction commits.
+- **The `UnitOfWork.run` callback is synchronous.** Don't put an `await` inside: `node:sqlite` uses a single connection and another request could slip into the middle of the transaction.
+- **`payments` has no UNIQUE constraint on purpose**, so the duplicate is visible with idempotency off. A real system would add a constraint as a second safety net.
+- **Reconciliation** (`ReconcilePayments`): always uses the idempotent version, with its own `eventId` `reconciliation_<payment>`.
+- The `/simulation/*` routes belong to the lab. The random failures (`FaultInjector`) and the simulated notices (`WebhookSimulator`) exist only for the demo.
+- Data lives in `data/demo.db` (SQLite via `node:sqlite`, in `.gitignore`). Node 24 prints an "ExperimentalWarning"; that is normal.
 
-Ideas que se han comentado pero **no están decididas**: persistencia de órdenes (por ejemplo SQLite), idempotencia al crear pagos y al procesar webhooks (deduplicar por `event.id`), y un script `npm run stripe:listen` que lea la clave del `.env`. No las implementes sin que se pidan.
+## Pending (future)
+Features to be added later. Details of each in the README.
 
-## Forma de trabajo
-- Si el usuario hace una **pregunta** ("¿es necesario X?", "¿para qué sirve Y?"), responde y espera. Implementa solo cuando lo pida de forma explícita.
-- Este es un proyecto para aprender cómo funciona una pasarela de pago: explica los conceptos con claridad y mantén el código simple y legible.
+- **Refunds.** `RefundPayment` use case, a new method on `PaymentGateway`, an HTTP route and `refund.*` events. New events are translated in `stripe-webhook-verifier.ts` and added to `PaymentEvent`.
+- **Disputes (chargebacks).** Handling of `charge.dispute.*` in the webhook, a `disputed` status on orders and sending evidence to Stripe. Orders are already stored in SQLite (see the section above), so only the status and the events are missing.
+
+Ideas that have been discussed but are **not decided**: an `npm run stripe:listen` script that reads the key from `.env`, and an *outbox* for the SMS (today, if the process dies right after the transaction commits and before sending, the SMS is lost). Don't implement them unless asked.
+
+## Way of working
+- If the user asks a **question** ("is X necessary?", "what is Y for?"), answer and wait. Implement only when explicitly asked.
+- This is a project for learning how a payment gateway works: explain concepts clearly and keep the code simple and readable.

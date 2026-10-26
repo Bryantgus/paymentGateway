@@ -11,5 +11,5 @@ try {
 }
 
 createApp(buildDependencies(env)).listen(env.port, () => {
-  console.log(`Servidor listo en http://localhost:${env.port}`);
+  console.log(`Server ready at http://localhost:${env.port}`);
 });

@@ -12,26 +12,27 @@ export class StripeWebhookVerifier implements WebhookVerifier {
 
   verify(rawBody: Buffer, signature: string | undefined): PaymentEvent {
     if (!this.webhookSecret) {
-      throw new InvalidWebhookSignatureError('STRIPE_WEBHOOK_SECRET no está configurado');
+      throw new InvalidWebhookSignatureError('STRIPE_WEBHOOK_SECRET is not configured');
     }
 
     let event: Stripe.Event;
     try {
       event = this.stripe.webhooks.constructEvent(rawBody, signature ?? '', this.webhookSecret);
     } catch (err) {
-      throw new InvalidWebhookSignatureError(err instanceof Error ? err.message : 'Firma inválida');
+      throw new InvalidWebhookSignatureError(err instanceof Error ? err.message : 'Invalid signature');
     }
     return toPaymentEvent(event);
   }
 }
 
-/** Traduce un evento de Stripe a nuestro dominio. Los eventos nuevos (reembolsos, disputas) se agregan aquí. */
+/** Translates a Stripe event into our domain. New events (refunds, disputes) are added here. */
 function toPaymentEvent(event: Stripe.Event): PaymentEvent {
   switch (event.type) {
     case 'payment_intent.succeeded': {
       const pi = event.data.object;
       return {
         type: 'payment.succeeded',
+        eventId: event.id,
         paymentId: pi.id,
         amount: pi.amount,
         currency: pi.currency,
@@ -42,11 +43,12 @@ function toPaymentEvent(event: Stripe.Event): PaymentEvent {
       const pi = event.data.object;
       return {
         type: 'payment.failed',
+        eventId: event.id,
         paymentId: pi.id,
-        reason: pi.last_payment_error?.message ?? 'desconocido',
+        reason: pi.last_payment_error?.message ?? 'unknown',
       };
     }
     default:
-      return { type: 'unhandled', gatewayType: event.type };
+      return { type: 'unhandled', eventId: event.id, gatewayType: event.type };
   }
 }

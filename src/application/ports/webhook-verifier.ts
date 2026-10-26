@@ -1,7 +1,7 @@
 import type { PaymentEvent } from '../../domain/payments/payment-event';
 
-/** Comprueba que un webhook es auténtico y lo traduce a un evento de nuestro dominio. */
+/** Checks that a webhook is authentic and translates it into an event of our domain. */
 export interface WebhookVerifier {
-  /** @throws InvalidWebhookSignatureError si la firma no es válida. */
+  /** @throws InvalidWebhookSignatureError if the signature is not valid. */
   verify(rawBody: Buffer, signature: string | undefined): PaymentEvent;
 }

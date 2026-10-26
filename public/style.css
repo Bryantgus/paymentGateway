@@ -13,7 +13,7 @@ main {
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
 }
 
-.aviso {
+.notice {
   background: #fff8e1;
   padding: 10px;
   border-radius: 6px;
@@ -41,21 +41,21 @@ button:disabled {
   cursor: default;
 }
 
-#mensaje {
+#message {
   margin-top: 12px;
   font-weight: 600;
 }
 
-#mensaje.ok {
+#message.ok {
   color: #1a7f37;
   text-align: center;
 }
 
-#mensaje.error {
+#message.error {
   color: #c62828;
 }
 
-#btn-ayuda {
+#btn-help {
   position: fixed;
   right: 20px;
   bottom: 20px;
@@ -69,7 +69,7 @@ button:disabled {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
 }
 
-#modal-tarjetas {
+#cards-modal {
   width: min(560px, calc(100% - 32px));
   max-height: 85vh;
   padding: 20px;
@@ -78,22 +78,22 @@ button:disabled {
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
 
-#modal-tarjetas::backdrop {
+#cards-modal::backdrop {
   background: rgba(0, 0, 0, 0.45);
 }
 
-#modal-tarjetas header {
+#cards-modal header {
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
 
-#modal-tarjetas h2 {
+#cards-modal h2 {
   margin: 0;
   font-size: 1.2rem;
 }
 
-#modal-tarjetas #btn-cerrar {
+#cards-modal #btn-close {
   width: 36px;
   margin: 0;
   padding: 0;
@@ -103,43 +103,191 @@ button:disabled {
   line-height: 1;
 }
 
-#modal-tarjetas table {
+#cards-modal table {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.9rem;
 }
 
-#modal-tarjetas th,
-#modal-tarjetas td {
+#cards-modal th,
+#cards-modal td {
   padding: 8px 6px;
   text-align: left;
   border-bottom: 1px solid #e5e7ee;
 }
 
-#modal-tarjetas td:first-child {
+#cards-modal td:first-child {
   white-space: nowrap;
 }
 
-#modal-tarjetas details {
+#cards-modal details {
   border-bottom: 1px solid #e5e7ee;
 }
 
-#modal-tarjetas summary {
+#cards-modal summary {
   padding: 12px 6px;
   color: #5469d4;
   font-weight: 600;
   cursor: pointer;
 }
 
-#modal-tarjetas details[open] summary {
+#cards-modal details[open] summary {
   border-bottom: 2px solid #5469d4;
 }
 
-#modal-tarjetas details table {
+#cards-modal details table {
   margin-bottom: 8px;
 }
 
-#modal-tarjetas .nota {
+#cards-modal .note {
   font-size: 0.85rem;
   color: #555;
+}
+
+/* ---------- Idempotency lab ---------- */
+#lab {
+  max-width: 960px;
+  margin: 0 auto 90px;
+  padding: 24px;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+}
+
+#lab h2 {
+  margin-top: 0;
+}
+
+#lab h3 {
+  margin: 20px 0 6px;
+  font-size: 1rem;
+}
+
+#lab .intro {
+  color: #444;
+}
+
+#lab button {
+  width: auto;
+  margin: 0;
+  padding: 6px 12px;
+  font-size: 0.9rem;
+}
+
+#lab button.secondary {
+  margin-top: 20px;
+  background: #fff;
+  color: #5469d4;
+  border: 1px solid #5469d4;
+}
+
+#lab .controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  align-items: center;
+  padding: 12px;
+  background: #f5f6fa;
+  border-radius: 8px;
+}
+
+#lab .controls select {
+  width: auto;
+  margin: 0 0 0 8px;
+  padding: 6px;
+  font-size: 0.9rem;
+}
+
+#lab .switch {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1.05rem;
+  cursor: pointer;
+}
+
+#lab .switch input {
+  width: 22px;
+  height: 22px;
+}
+
+.mode-on {
+  color: #1a7f37;
+}
+
+.mode-off {
+  color: #c62828;
+}
+
+#lab .steps {
+  line-height: 1.9;
+  padding-left: 20px;
+}
+
+#lab-result {
+  min-height: 1.4em;
+  font-weight: 600;
+  color: #333;
+}
+
+.verdict {
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 0.95rem;
+}
+
+.verdict.ok {
+  background: #e8f5e9;
+  color: #1a5e2a;
+}
+
+.verdict.bad {
+  background: #ffebee;
+  color: #8e1b1b;
+}
+
+#lab table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+#lab th,
+#lab td {
+  padding: 6px;
+  text-align: left;
+  border-bottom: 1px solid #e5e7ee;
+  vertical-align: middle;
+}
+
+#lab .empty {
+  margin: 4px 0;
+  color: #777;
+  font-size: 0.85rem;
+}
+
+#lab .actions {
+  display: flex;
+  gap: 4px;
+}
+
+#lab .actions button {
+  padding: 3px 8px;
+}
+
+.badge {
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.badge.paid {
+  background: #e8f5e9;
+  color: #1a5e2a;
+}
+
+.badge.pending {
+  background: #fff3e0;
+  color: #8a5300;
 }
